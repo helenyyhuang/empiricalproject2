@@ -1,0 +1,164 @@
+------------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /Users/yyy/Desktop/project2/empiricalproject2_helen.log
+  log type:  text
+ opened on:   4 Dec 2023, 21:08:04
+
+. 
+. * Check if 'binscatter' package is installed and install if not present
+. cap which binscatter
+
+. if _rc ssc install binscatter, replace version(1.0)
+
+. 
+. * Load the Opportunity Atlas dataset
+. use "$data", clear
+
+. 
+. * Error checking after loading data to ensure the file exists and is not empty
+. if _rc {
+.     di "Error: Dataset could not be loaded. Please check the file path."
+.     exit 1
+. }
+
+. 
+. * Question 4: Graphical Regression Discontinuity Analysis
+. * -----------------------------------
+. 
+. * a. Assess the linear relationship between school enrollment and class size
+. binscatter classize school_enrollment if inrange(school_enrollment,20,60), rd(40.5) discrete line(lfit)
+
+. graph export "$path/figures_helen/figure1linear.png", replace
+file /Users/yyy/Desktop/project2/figures_helen/figure1linear.png saved as PNG format
+
+. 
+. * b. Explore quadratic relationships between school enrollment and performance scores
+. binscatter avgmath school_enrollment if inrange(school_enrollment,20,60), rd(40.5) discrete line(qfit)
+
+. graph export "$path/figures_helen/figure2quadratic.png", replace
+file /Users/yyy/Desktop/project2/figures_helen/figure2quadratic.png saved as PNG format
+
+. 
+. binscatter avgverb school_enrollment if inrange(school_enrollment,20,60), rd(40.5) discrete line(qfit)
+
+. graph export "$path/figures_helen/figure3quadratic.png", replace
+file /Users/yyy/Desktop/project2/figures_helen/figure3quadratic.png saved as PNG format
+
+. 
+. * c. Investigate how other school characteristics relate to enrollment
+. binscatter disadvantaged  school_enrollment if inrange(school_enrollment,20,60), rd(40.5) discrete line(qfit)
+
+. graph export "$path/figures_helen/figure4quadratic.png", replace
+file /Users/yyy/Desktop/project2/figures_helen/figure4quadratic.png saved as PNG format
+
+. 
+. binscatter religious  school_enrollment if inrange(school_enrollment,20,60), rd(40.5) discrete line(qfit)
+
+. graph export "$path/figures_helen/figure5quadratic.png", replace
+file /Users/yyy/Desktop/project2/figures_helen/figure5quadratic.png saved as PNG format
+
+. 
+. binscatter female school_enrollment if inrange(school_enrollment,20,60), rd(40.5) discrete line(qfit)
+
+. graph export "$path/figures_helen/figure6quadratic.png", replace
+file /Users/yyy/Desktop/project2/figures_helen/figure6quadratic.png saved as PNG format
+
+. 
+. * d. Distribution of school enrollment - Histogram
+. collapse (mean) school_enrollment, by(schlcode)
+
+. twoway (histogram school_enrollment if inrange(school_enrollment,20,60), discrete frequency), xline(40.5)
+
+. graph export "$path/figures_helen/figure7schoolcounts.png", replace
+file /Users/yyy/Desktop/project2/figures_helen/figure7schoolcounts.png saved as PNG format
+
+. 
+. * Question 5: Regression Analysis
+. * -----------------------------------
+. 
+. * Re-load the full dataset for regression analysis
+. use "$data", clear
+
+. 
+. *Generate new variables for regression discontinuity design
+. * 'above40' indicates whether the enrollment is above the cutoff of 40
+. * 'x' is the running variable - the distance from the cutoff
+. * 'x_above40' is an interaction term to allow for slope change at the cutoff
+. gen above40 = 0
+
+. replace above40 = 1 if school_enrollment > 40
+(1,724 real changes made)
+
+. gen x = school_enrollment - 40
+
+. gen x_above40 = x*above40
+
+. 
+. *Run regression 
+. reg classize above40 x x_above40 if inrange(school_enrollment,0,80), cluster(schlcode)
+
+Linear regression                               Number of obs     =      1,180
+                                                F(3, 730)         =     447.68
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.5411
+                                                Root MSE          =     4.4701
+
+                             (Std. err. adjusted for 731 clusters in schlcode)
+------------------------------------------------------------------------------
+             |               Robust
+    classize | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+     above40 |  -11.00075    1.18299    -9.30   0.000    -13.32322    -8.67828
+           x |   .6725232   .0569927    11.80   0.000     .5606341    .7844122
+   x_above40 |  -.3417826   .0602566    -5.67   0.000    -.4600794   -.2234857
+       _cons |   33.04583   1.133772    29.15   0.000     30.81999    35.27168
+------------------------------------------------------------------------------
+
+. reg avgmath above40 x x_above40 if inrange(school_enrollment,0,80), cluster(schlcode)
+
+Linear regression                               Number of obs     =      1,180
+                                                F(3, 730)         =       8.45
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.0323
+                                                Root MSE          =     9.9162
+
+                             (Std. err. adjusted for 731 clusters in schlcode)
+------------------------------------------------------------------------------
+             |               Robust
+     avgmath | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+     above40 |   3.428896   1.612143     2.13   0.034     .2639069    6.593886
+           x |   -.192629   .0817787    -2.36   0.019    -.3531785   -.0320795
+   x_above40 |    .298097   .0900022     3.31   0.001     .1214031     .474791
+       _cons |   60.82845     1.3658    44.54   0.000     58.14709    63.50982
+------------------------------------------------------------------------------
+
+. reg avgverb above40 x x_above40 if inrange(school_enrollment,0,80), cluster(schlcode)
+
+Linear regression                               Number of obs     =      1,180
+                                                F(3, 730)         =       4.49
+                                                Prob > F          =     0.0039
+                                                R-squared         =     0.0181
+                                                Root MSE          =     8.3873
+
+                             (Std. err. adjusted for 731 clusters in schlcode)
+------------------------------------------------------------------------------
+             |               Robust
+     avgverb | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+     above40 |   2.628131   1.497048     1.76   0.080    -.3109008    5.567164
+           x |  -.1643771   .0772686    -2.13   0.034    -.3160722   -.0126821
+   x_above40 |   .2258534   .0830446     2.72   0.007     .0628187    .3888881
+       _cons |   69.82073   1.298142    53.79   0.000     67.27219    72.36926
+------------------------------------------------------------------------------
+
+. 
+. * Cleanup and close
+. * -----------------------------------
+. 
+. log close
+      name:  <unnamed>
+       log:  /Users/yyy/Desktop/project2/empiricalproject2_helen.log
+  log type:  text
+ closed on:   4 Dec 2023, 21:08:13
+------------------------------------------------------------------------------------------------------------------------------------
