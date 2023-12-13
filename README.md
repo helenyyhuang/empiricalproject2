@@ -1,7 +1,7 @@
 # Empirical Project 2 - Do Smaller Classes Improve Test Scores? Evidence from a Regression Discontinuity Design
 This repository contains my work on Empirical Project 2 from Prof. Raj Chetty's Big Data course, which is publicly accessible at [Opportunity Insights Course website](https://opportunityinsights.org/course/). The project focuses on understanding the impact of class size on student learning outcomes.
 
-## Technologies Used
+## Technology Used
 - STATA
 
 ## How to Use
